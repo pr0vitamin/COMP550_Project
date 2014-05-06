@@ -22,6 +22,11 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
+        
+        <!-- Link against the Estimote SDK -->
+    	<service android:name="com.estimote.sdk.service.BeaconService"
+         	android:exported="false"/>
+    	
         <activity
             android:name="com.jeremyutting.localactions.MainActivity"
             android:label="@string/app_name" >
@@ -31,6 +36,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
         <activity
             android:name="com.jeremyutting.localactions.ScanActivity"
             android:label="@string/title_activity_scan"
@@ -39,6 +45,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="android.app.ListActivity" />
         </activity>
+        
     </application>
 
 </manifest>
