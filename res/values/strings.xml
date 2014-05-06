@@ -3,6 +3,8 @@
 
     <string name="app_name">Local Actions</string>
     <string name="action_settings">Settings</string>
+    <string name="home_button">Start</string>
+    <string name="title_activity_scan">ScanActivity</string>
     <string name="hello_world">Hello world!</string>
 
 </resources>
