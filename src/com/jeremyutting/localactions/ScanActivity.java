@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -163,12 +162,12 @@ public class ScanActivity extends Activity {
         public void replaceWith(Collection<Beacon> newBeacons) {
         	this.beacons.clear();
             this.beacons.addAll(newBeacons);
-            /*Collections.sort(beacons, new Comparator<Beacon>() {
+            Collections.sort(beacons, new Comparator<Beacon>() {
               @Override
               public int compare(Beacon lhs, Beacon rhs) {
-                return (int) Math.signum(Utils.computeAccuracy(lhs) - Utils.computeAccuracy(rhs));
+                return lhs.getMajor() - rhs.getMajor();
               }
-            });*/
+            });
             notifyDataSetChanged();
         }
  
@@ -202,12 +201,12 @@ public class ScanActivity extends Activity {
             }
  
             Beacon beacon = beacons.get(i);
-            final String deviceName = beacon.getName();
-            if (deviceName != null && deviceName.length() > 0)
-                viewHolder.deviceName.setText(deviceName);
+            final int identifier = beacon.getMajor();
+            if (identifier > 0)
+                viewHolder.deviceName.setText("Estimote " + Integer.toString(identifier));
             else
                 viewHolder.deviceName.setText(R.string.unknown_device);
-            viewHolder.deviceAddress.setText(beacon.getMacAddress());
+            viewHolder.deviceAddress.setText(Double.toString(Utils.computeAccuracy(beacon)));
  
             return view;
         }
