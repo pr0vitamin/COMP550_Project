@@ -131,6 +131,7 @@ public class ScanActivity extends Activity {
 		} catch (RemoteException e) {
 			Log.d(TAG, "Error while stopping ranging", e);
 		}
+		super.onStop();
 	}
 	
 	private void connectToService() {
