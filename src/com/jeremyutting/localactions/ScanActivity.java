@@ -1,12 +1,24 @@
 package com.jeremyutting.localactions;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
+import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
+import com.estimote.sdk.Region;
+import com.estimote.sdk.Utils;
+import com.estimote.sdk.utils.L;
 
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,26 +27,45 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.support.v4.app.NavUtils;
 
 public class ScanActivity extends Activity {
 	
 	private static final String TAG = ScanActivity.class.getSimpleName();
+	private final static int REQUEST_ENABLE_BT = 1;
+	private static final Region ALL_ESTIMOTE_BEACONS = new Region("rid", null, null, null);
 	private BeaconManager beacon_manager;
 	private LeDeviceListAdapter adapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_scan);
 		
-		com.estimote.sdk.utils.L.enableDebugLogging(true);
+		L.enableDebugLogging(true);
 		adapter = new LeDeviceListAdapter();
 		ListView list = (ListView) findViewById(R.id.device_list);
+		if (list == null) {
+			Log.d(TAG, "list was null");
+		}
 		list.setAdapter(adapter);
 		
-		//TODO configure beacon manager
-		
-		setContentView(R.layout.activity_scan);
+		beacon_manager = new BeaconManager(this);
+		beacon_manager.setRangingListener(new BeaconManager.RangingListener() {
+			
+			@Override
+			public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
+				runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						getActionBar().setSubtitle("Found " + beacons.size() + " beacons");
+						adapter.replaceWith(beacons);
+					}
+				});
+			}
+		});
 		
 		// Show the Up button in the action bar.
 		setupActionBar();
@@ -73,44 +104,89 @@ public class ScanActivity extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 	
+	@Override
+	protected void onDestroy() {
+		beacon_manager.disconnect();
+		
+		super.onDestroy();
+	}
+	
+	@Override
+	protected void onStart() {
+		super.onStart();
+		
+		// If Bluetooth is not enabled, let user enable it.
+	    if (!beacon_manager.isBluetoothEnabled()) {
+	      Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+	      startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+	    } else {
+	      connectToService();
+	    }
+	}
+	
+	@Override
+	protected void onStop() {
+		try {
+			beacon_manager.stopRanging(ALL_ESTIMOTE_BEACONS);
+		} catch (RemoteException e) {
+			Log.d(TAG, "Error while stopping ranging", e);
+		}
+	}
+	
+	private void connectToService() {
+		getActionBar().setSubtitle("Scanning...");
+		adapter.replaceWith(Collections.<Beacon>emptyList());
+		beacon_manager.connect(new BeaconManager.ServiceReadyCallback() {
+
+			@Override
+			public void onServiceReady() {
+				try {
+					beacon_manager.startRanging(ALL_ESTIMOTE_BEACONS);
+				} catch (RemoteException e) {
+					Toast.makeText(ScanActivity.this, "Can't scan, something bad happened :(", Toast.LENGTH_LONG).show();
+					Log.e(TAG, "Could not range: ", e);
+				}
+			}
+			
+		});
+	}
+	
 	// Adapter for holding devices found through scanning.
     private class LeDeviceListAdapter extends BaseAdapter {
-        private ArrayList<BluetoothDevice> mLeDevices;
-        private LayoutInflater mInflator;
+        private ArrayList<Beacon> beacons;
+        private LayoutInflater inflator;
  
         public LeDeviceListAdapter() {
             super();
-            mLeDevices = new ArrayList<BluetoothDevice>();
-            mInflator = ScanActivity.this.getLayoutInflater();
+            this.beacons = new ArrayList<Beacon>();
+            this.inflator = ScanActivity.this.getLayoutInflater();
         }
  
-        public void addDevice(BluetoothDevice device) {
-            if(!mLeDevices.contains(device)) {
-                mLeDevices.add(device);
-            }
-        }
- 
-        public BluetoothDevice getDevice(int position) {
-            return mLeDevices.get(position);
-        }
- 
-        public void clear() {
-            mLeDevices.clear();
+        public void replaceWith(Collection<Beacon> newBeacons) {
+        	this.beacons.clear();
+            this.beacons.addAll(newBeacons);
+            /*Collections.sort(beacons, new Comparator<Beacon>() {
+              @Override
+              public int compare(Beacon lhs, Beacon rhs) {
+                return (int) Math.signum(Utils.computeAccuracy(lhs) - Utils.computeAccuracy(rhs));
+              }
+            });*/
+            notifyDataSetChanged();
         }
  
         @Override
         public int getCount() {
-            return mLeDevices.size();
+            return beacons.size();
         }
  
         @Override
-        public Object getItem(int i) {
-            return mLeDevices.get(i);
+        public Beacon getItem(int position) {
+            return beacons.get(position);
         }
  
         @Override
-        public long getItemId(int i) {
-            return i;
+        public long getItemId(int position) {
+            return position;
         }
  
         @Override
@@ -118,7 +194,7 @@ public class ScanActivity extends Activity {
             ViewHolder viewHolder;
             // General ListView optimization code.
             if (view == null) {
-                view = mInflator.inflate(R.layout.listitem_device, null);
+                view = inflator.inflate(R.layout.listitem_device, null);
                 viewHolder = new ViewHolder();
                 viewHolder.deviceAddress = (TextView) view.findViewById(R.id.device_address);
                 viewHolder.deviceName = (TextView) view.findViewById(R.id.device_name);
@@ -127,13 +203,13 @@ public class ScanActivity extends Activity {
                 viewHolder = (ViewHolder) view.getTag();
             }
  
-            BluetoothDevice device = mLeDevices.get(i);
-            final String deviceName = device.getName();
+            Beacon beacon = beacons.get(i);
+            final String deviceName = beacon.getName();
             if (deviceName != null && deviceName.length() > 0)
                 viewHolder.deviceName.setText(deviceName);
             else
                 viewHolder.deviceName.setText(R.string.unknown_device);
-            viewHolder.deviceAddress.setText(device.getAddress());
+            viewHolder.deviceAddress.setText(beacon.getMacAddress());
  
             return view;
         }

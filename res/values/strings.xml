@@ -6,6 +6,5 @@
     <string name="home_button">Start</string>
     <string name="title_activity_scan">ScanActivity</string>
     <string name="unknown_device">Unknown Device</string>
-    <string name="hello_world">Hello world!</string>
 
 </resources>
