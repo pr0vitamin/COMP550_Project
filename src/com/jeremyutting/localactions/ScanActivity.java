@@ -46,9 +46,6 @@ public class ScanActivity extends Activity {
 		L.enableDebugLogging(true);
 		adapter = new LeDeviceListAdapter();
 		ListView list = (ListView) findViewById(R.id.device_list);
-		if (list == null) {
-			Log.d(TAG, "list was null");
-		}
 		list.setAdapter(adapter);
 		
 		beacon_manager = new BeaconManager(this);
