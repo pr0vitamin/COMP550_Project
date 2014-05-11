@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
@@ -48,6 +50,7 @@ public class ScanActivity extends Activity {
 		list.setAdapter(adapter);
 		
 		beacon_manager = new BeaconManager(this);
+		beacon_manager.setForegroundScanPeriod(200, 0);
 		beacon_manager.setRangingListener(new BeaconManager.RangingListener() {
 			
 			@Override
@@ -148,15 +151,48 @@ public class ScanActivity extends Activity {
 		});
 	}
 	
+	// A custom class to handle the averaging of the last 5 distance estimates
+	private class BeaconDistanceTracker {
+		private Queue<Double> distances;
+		
+		public BeaconDistanceTracker() {
+			this.distances = new LinkedList<Double>();
+		}
+		
+		public void addDistance(Double distance) {
+			distances.add(distance);
+			if (distances.size() > 5) {
+				distances.remove();
+			}
+		}
+		
+		public Double getDistance() {
+			int divisor = distances.size();
+			Double total = 0.0;
+			for (Double d : distances) {
+				total += d;
+			}
+			return total/divisor;
+		}
+	}
+	
 	// Adapter for holding devices found through scanning.
     private class LeDeviceListAdapter extends BaseAdapter {
         private ArrayList<Beacon> beacons;
+        private BeaconDistanceTracker[] distances;
         private LayoutInflater inflator;
  
         public LeDeviceListAdapter() {
             super();
             this.beacons = new ArrayList<Beacon>();
             this.inflator = ScanActivity.this.getLayoutInflater();
+            
+            // Initialize the classes for tracking distances - we are using 3 beacons 
+            BeaconDistanceTracker beacon1_distance = new BeaconDistanceTracker();
+            BeaconDistanceTracker beacon2_distance = new BeaconDistanceTracker();
+            BeaconDistanceTracker beacon3_distance = new BeaconDistanceTracker();
+            
+            distances = new BeaconDistanceTracker[] {beacon1_distance, beacon2_distance, beacon3_distance};
         }
  
         public void replaceWith(Collection<Beacon> newBeacons) {
@@ -168,6 +204,19 @@ public class ScanActivity extends Activity {
                 return lhs.getMajor() - rhs.getMajor();
               }
             });
+            for (Beacon beacon : beacons) {
+            	switch (beacon.getMajor()) {
+            		case 32333:
+            			distances[0].addDistance(Utils.computeAccuracy(beacon));
+            			break;
+            		case 33771:
+            			distances[1].addDistance(Utils.computeAccuracy(beacon));
+            			break;
+            		case 50133:
+            			distances[2].addDistance(Utils.computeAccuracy(beacon));
+            			break;
+            	}
+            }
             notifyDataSetChanged();
         }
  
@@ -188,6 +237,7 @@ public class ScanActivity extends Activity {
  
         @Override
         public View getView(int i, View view, ViewGroup viewGroup) {
+        	Log.d(TAG, "getView()");
             ViewHolder viewHolder;
             // General ListView optimization code.
             if (view == null) {
@@ -206,7 +256,17 @@ public class ScanActivity extends Activity {
                 viewHolder.deviceName.setText("Estimote " + Integer.toString(identifier));
             else
                 viewHolder.deviceName.setText(R.string.unknown_device);
-            viewHolder.deviceAddress.setText(Double.toString(Utils.computeAccuracy(beacon)));
+            switch (identifier) {
+    			case 32333:
+    				viewHolder.deviceAddress.setText(String.format("%.2f", distances[0].getDistance()));
+    				break;
+    			case 33771:
+    				viewHolder.deviceAddress.setText(String.format("%.2f", distances[1].getDistance()));
+    				break;
+    			case 50133:
+    				viewHolder.deviceAddress.setText(String.format("%.2f", distances[2].getDistance()));
+    				break;
+            }
  
             return view;
         }
