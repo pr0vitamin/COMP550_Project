@@ -168,11 +168,15 @@ public class ScanActivity extends Activity {
 		
 		public Double getDistance() {
 			int divisor = distances.size();
-			Double total = 0.0;
-			for (Double d : distances) {
-				total += d;
+			if (divisor == 0) {
+				return 0.0;
+			} else {
+				Double total = 0.0;
+				for (Double d : distances) {
+					total += d;
+				}
+				return total/divisor;
 			}
-			return total/divisor;
 		}
 	}
 	
@@ -217,6 +221,8 @@ public class ScanActivity extends Activity {
             			break;
             	}
             }
+            
+            GetCoordinates(distances[0].getDistance(), distances[1].getDistance(), distances[2].getDistance());
             notifyDataSetChanged();
         }
  
@@ -269,6 +275,33 @@ public class ScanActivity extends Activity {
             }
  
             return view;
+        }
+        
+        /*
+         * assumes:
+         * beacon 1 is at location (10,20)
+         * beacon 2 is at location (10,10)
+         * beacon 3 is at location (20,10)
+         */
+        public void GetCoordinates(Double d1, Double d2, Double d3) {
+        	int b1x = 11;
+        	int b1y = 21;
+        	int b2x = 10;
+        	int b2y = 10;
+        	int b3x = 21;
+        	int b3y = 11;
+        	Double W, Z, x, y, y2;
+        	W = (d1*d1) - (d2*d2) - (b1x*b1x) - (b1y*b1y) + (b2x*b2x) + (b2y*b2y);
+        	Z = (d2*d2) - (d3*d3) - (b2x*b2x) - (b2y*b2y) + (b3x*b3x) + (b3y*b3y);
+        	
+        	x = (W*(b3y-b2y) - Z*(b2y-b1y)) / (2*((b2x-b1x)*(b3y-b2y) - (b3x-b2x)*(b2y-b1y)));
+        	y = (W - 2*x*(b2x-b1x)) / (2*(b2y-b1y));
+        	y2 = (Z - 2*x*(b3x-b2x)) / (2*(b3y-b2y));
+        	
+        	y = (y+y2) / 2;
+        	
+        	Log.d(TAG, "x: " + String.format("%.1f", x));
+        	Log.d(TAG, "y: " + String.format("%.1f", y));
         }
     }
     
