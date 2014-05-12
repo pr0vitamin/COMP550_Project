@@ -282,6 +282,8 @@ public class ScanActivity extends Activity {
          * beacon 1 is at location (10,20)
          * beacon 2 is at location (10,10)
          * beacon 3 is at location (20,10)
+         * 
+         * Also, this function doesn't really work at the moment.
          */
         public void GetCoordinates(Double d1, Double d2, Double d3) {
         	int b1x = 11;
