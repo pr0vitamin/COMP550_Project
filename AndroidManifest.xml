@@ -4,6 +4,7 @@
     android:versionCode="1"
     android:versionName="1.0" >
 
+    <!-- requires android 4.3 for the BLE SDK, but targeted at 4.4 -->
     <uses-sdk
         android:minSdkVersion="18"
         android:targetSdkVersion="19" />

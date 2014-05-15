@@ -2,10 +2,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
+    <!-- This is the list view for the scan activity. listitem_device.xml will populate this. -->
     <ListView
         android:id="@+id/device_list"
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+    
+    <!--  We could perhaps set the height of the ListView to be fixed,
+    	  since we know there's only 3 beacons, and put the button here. -->
 
 </FrameLayout>

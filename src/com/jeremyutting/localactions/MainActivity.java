@@ -17,6 +17,7 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
 		
 		// Set up BLE, get adapter
 		final BluetoothManager bt_manager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
@@ -24,11 +25,10 @@ public class MainActivity extends Activity {
 		
 		// Is BLE available? Enabled?
 		if (bt_adapter == null || !bt_adapter.isEnabled()) {
+			// Ask for BlueTooth to be turned on
 			Intent enable_bt_intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
 			startActivityForResult(enable_bt_intent, REQUEST_ENABLE_BT);
 		}
-		
-		setContentView(R.layout.activity_main);
 	}
 
 	@Override
@@ -38,6 +38,7 @@ public class MainActivity extends Activity {
 		return true;
 	}
 	
+	// This is called when the start button is pressed - it launches the scan activity
 	public void launchScan(View view) {
 		Intent intent = new Intent(this, ScanActivity.class);
 		startActivity(intent);

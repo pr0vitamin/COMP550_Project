@@ -35,28 +35,38 @@ public class ScanActivity extends Activity {
 	
 	private static final String TAG = ScanActivity.class.getSimpleName();
 	private final static int REQUEST_ENABLE_BT = 1;
+	
+	// This region means that we're only scanning for Estimote beacons, and not ALL BlueTooth devices.
 	private static final Region ALL_ESTIMOTE_BEACONS = new Region("rid", null, null, null);
+	
+	
 	private BeaconManager beacon_manager;
 	private LeDeviceListAdapter adapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		// Link this activity to the activity_scan.xml layout
 		setContentView(R.layout.activity_scan);
 		
 		L.enableDebugLogging(true);
+		
+		// Create our custom ListView adapter, and link it with our view
 		adapter = new LeDeviceListAdapter();
 		ListView list = (ListView) findViewById(R.id.device_list);
 		list.setAdapter(adapter);
 		
+		// Create and initialize Estimote BeaconManager, and set the scan period to 200ms 
 		beacon_manager = new BeaconManager(this);
 		beacon_manager.setForegroundScanPeriod(200, 0);
+		// Ranging is the act of scanning for beacons
 		beacon_manager.setRangingListener(new BeaconManager.RangingListener() {
 			
 			@Override
 			public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
 				runOnUiThread(new Runnable() {
 
+					// Update the title bar when a beacon is found.
 					@Override
 					public void run() {
 						getActionBar().setSubtitle("Found " + beacons.size() + " beacons");
@@ -105,6 +115,7 @@ public class ScanActivity extends Activity {
 	
 	@Override
 	protected void onDestroy() {
+		// When the app is destroyed, disconnect the beacon manager
 		beacon_manager.disconnect();
 		
 		super.onDestroy();
@@ -119,12 +130,14 @@ public class ScanActivity extends Activity {
 	      Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
 	      startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 	    } else {
-	      connectToService();
+	    	// If BlueTooth is enabled, we're good to start ranging.
+	    	connectToService();
 	    }
 	}
 	
 	@Override
 	protected void onStop() {
+		// Attempt to stop reforming the Ranging action
 		try {
 			beacon_manager.stopRanging(ALL_ESTIMOTE_BEACONS);
 		} catch (RemoteException e) {
@@ -135,14 +148,17 @@ public class ScanActivity extends Activity {
 	
 	private void connectToService() {
 		getActionBar().setSubtitle("Scanning...");
+		// Wipe the beacon list
 		adapter.replaceWith(Collections.<Beacon>emptyList());
 		beacon_manager.connect(new BeaconManager.ServiceReadyCallback() {
 
+			// When the scanning service is available as defined by our interval, perform ranging.
 			@Override
 			public void onServiceReady() {
 				try {
 					beacon_manager.startRanging(ALL_ESTIMOTE_BEACONS);
 				} catch (RemoteException e) {
+					// Something terrible happened. Help.
 					Toast.makeText(ScanActivity.this, "Can't scan, something bad happened :(", Toast.LENGTH_LONG).show();
 					Log.e(TAG, "Could not range: ", e);
 				}
@@ -151,7 +167,11 @@ public class ScanActivity extends Activity {
 		});
 	}
 	
-	// A custom class to handle the averaging of the last 5 distance estimates
+	/* 
+	 * A custom class to handle the averaging of the last 5 distance estimates.
+	 * The main purpose of this is to form a smoothing effect, so that one high/low 
+	 * ping from the beacon won't throw the distance off suddenly.
+	 */
 	private class BeaconDistanceTracker {
 		private Queue<Double> distances;
 		
@@ -159,6 +179,7 @@ public class ScanActivity extends Activity {
 			this.distances = new LinkedList<Double>();
 		}
 		
+		// adds the latest distance to the queue, remove the oldest if there's more than 5
 		public void addDistance(Double distance) {
 			distances.add(distance);
 			if (distances.size() > 5) {
@@ -166,6 +187,7 @@ public class ScanActivity extends Activity {
 			}
 		}
 		
+		// take the average of all distances in the queue
 		public Double getDistance() {
 			int divisor = distances.size();
 			if (divisor == 0) {
@@ -199,15 +221,18 @@ public class ScanActivity extends Activity {
             distances = new BeaconDistanceTracker[] {beacon1_distance, beacon2_distance, beacon3_distance};
         }
  
+        // This function is called whenever a beacon scan returns a list of beacons
         public void replaceWith(Collection<Beacon> newBeacons) {
         	this.beacons.clear();
             this.beacons.addAll(newBeacons);
+            // Sort the beacons based on their Major int identifier
             Collections.sort(beacons, new Comparator<Beacon>() {
               @Override
               public int compare(Beacon lhs, Beacon rhs) {
                 return lhs.getMajor() - rhs.getMajor();
               }
             });
+            // Add the new distance to the distance tracker
             for (Beacon beacon : beacons) {
             	switch (beacon.getMajor()) {
             		case 32333:
@@ -222,7 +247,9 @@ public class ScanActivity extends Activity {
             	}
             }
             
+            // This is where we want to do the trilateration.
             GetCoordinates(distances[0].getDistance(), distances[1].getDistance(), distances[2].getDistance());
+            
             notifyDataSetChanged();
         }
  
@@ -249,13 +276,14 @@ public class ScanActivity extends Activity {
             if (view == null) {
                 view = inflator.inflate(R.layout.listitem_device, null);
                 viewHolder = new ViewHolder();
-                viewHolder.deviceAddress = (TextView) view.findViewById(R.id.device_address);
+                viewHolder.deviceDistance = (TextView) view.findViewById(R.id.device_distance);
                 viewHolder.deviceName = (TextView) view.findViewById(R.id.device_name);
                 view.setTag(viewHolder);
             } else {
                 viewHolder = (ViewHolder) view.getTag();
             }
  
+            // Load the view with the values for each beacon
             Beacon beacon = beacons.get(i);
             final int identifier = beacon.getMajor();
             if (identifier > 0)
@@ -264,13 +292,13 @@ public class ScanActivity extends Activity {
                 viewHolder.deviceName.setText(R.string.unknown_device);
             switch (identifier) {
     			case 32333:
-    				viewHolder.deviceAddress.setText(String.format("%.2f", distances[0].getDistance()));
+    				viewHolder.deviceDistance.setText(String.format("%.2f", distances[0].getDistance()));
     				break;
     			case 33771:
-    				viewHolder.deviceAddress.setText(String.format("%.2f", distances[1].getDistance()));
+    				viewHolder.deviceDistance.setText(String.format("%.2f", distances[1].getDistance()));
     				break;
     			case 50133:
-    				viewHolder.deviceAddress.setText(String.format("%.2f", distances[2].getDistance()));
+    				viewHolder.deviceDistance.setText(String.format("%.2f", distances[2].getDistance()));
     				break;
             }
  
@@ -278,20 +306,20 @@ public class ScanActivity extends Activity {
         }
         
         /*
-         * assumes:
-         * beacon 1 is at location (10,20)
-         * beacon 2 is at location (10,10)
-         * beacon 3 is at location (20,10)
+         * This is my poor attempt at Trilateration.
          * 
-         * Also, this function doesn't really work at the moment.
+         * This function doesn't really work at the moment.
          */
         public void GetCoordinates(Double d1, Double d2, Double d3) {
+        	// Coordinated of the beacons, this is static and arbitrary.
         	int b1x = 11;
         	int b1y = 21;
         	int b2x = 10;
         	int b2y = 10;
         	int b3x = 21;
         	int b3y = 11;
+        	
+        	// Here be dragons
         	Double W, Z, x, y, y2;
         	W = (d1*d1) - (d2*d2) - (b1x*b1x) - (b1y*b1y) + (b2x*b2x) + (b2y*b2y);
         	Z = (d2*d2) - (d3*d3) - (b2x*b2x) - (b2y*b2y) + (b3x*b3x) + (b3y*b3y);
@@ -302,6 +330,7 @@ public class ScanActivity extends Activity {
         	
         	y = (y+y2) / 2;
         	
+        	// Log the calculate x/y coordinates to the debug terminal
         	Log.d(TAG, "x: " + String.format("%.1f", x));
         	Log.d(TAG, "y: " + String.format("%.1f", y));
         }
@@ -309,6 +338,6 @@ public class ScanActivity extends Activity {
     
     static class ViewHolder {
         TextView deviceName;
-        TextView deviceAddress;
+        TextView deviceDistance;
     }
 }

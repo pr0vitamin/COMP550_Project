@@ -25,7 +25,7 @@ public final class R {
     }
     public static final class id {
         public static final int action_settings=0x7f080004;
-        public static final int device_address=0x7f080003;
+        public static final int device_distance=0x7f080003;
         public static final int device_list=0x7f080001;
         public static final int device_name=0x7f080002;
         public static final int homeScreen_button=0x7f080000;
