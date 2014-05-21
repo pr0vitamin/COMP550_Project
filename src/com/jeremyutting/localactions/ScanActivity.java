@@ -306,33 +306,33 @@ public class ScanActivity extends Activity {
         }
         
         /*
-         * This is my poor attempt at Trilateration.
-         * 
-         * This function doesn't really work at the moment.
+         * Prints the location (x, y, z) of the sensor using d1 as the origin
          */
         public void GetCoordinates(Double d1, Double d2, Double d3) {
-        	// Coordinated of the beacons, this is static and arbitrary.
-        	int b1x = 11;
-        	int b1y = 21;
-        	int b2x = 10;
-        	int b2y = 10;
-        	int b3x = 21;
-        	int b3y = 11;
+        	// Constants to make array indices more explicit
+        	final int X = 0;
+        	final int Y = 1;
+        	final int Z = 2;
+        	// Declare our origin
+        	// TODO: Provide this with a parameter
+        	double[] origin = {0.0d, 0.0d, 0.0d};
+        	// Declare our sources (the estimotes)
+        	// TODO: Provide this with a parameter instead of being arbitrary
+        	double[] first = origin;
+        	double[] second = {10.0d, 0.0d, 0.0d};
+        	double[] third = {10.0d, 5.0d, 0.0d};
+        	// Declare our coordinates
+        	double[] sensor = {5.0d, -10.0d, 0.0d};
         	
-        	// Here be dragons
-        	Double W, Z, x, y, y2;
-        	W = (d1*d1) - (d2*d2) - (b1x*b1x) - (b1y*b1y) + (b2x*b2x) + (b2y*b2y);
-        	Z = (d2*d2) - (d3*d3) - (b2x*b2x) - (b2y*b2y) + (b3x*b3x) + (b3y*b3y);
+        	// Now we can calculate our sensor coordinates
+        	sensor[X] = (d1*d1 - d2*d2 + d3*d3)/(2*second[X]);
+        	sensor[Y] = (d1*d1 - d3*d3 + third[X]*third[X] + third[Y]*third[Y])/(2*third[Y]) - (third[X]/third[Y])*sensor[X];
+        	sensor[Z] = Math.sqrt(d1*d1 - sensor[X]*sensor[X] - sensor[Y]*sensor[Y]);
         	
-        	x = (W*(b3y-b2y) - Z*(b2y-b1y)) / (2*((b2x-b1x)*(b3y-b2y) - (b3x-b2x)*(b2y-b1y)));
-        	y = (W - 2*x*(b2x-b1x)) / (2*(b2y-b1y));
-        	y2 = (Z - 2*x*(b3x-b2x)) / (2*(b3y-b2y));
-        	
-        	y = (y+y2) / 2;
-        	
-        	// Log the calculate x/y coordinates to the debug terminal
-        	Log.d(TAG, "x: " + String.format("%.1f", x));
-        	Log.d(TAG, "y: " + String.format("%.1f", y));
+        	// Log the calculate (x, y, z) coordinates to the debug terminal
+        	Log.d(TAG, "x: " + String.format("%.1d", sensor[X]));
+        	Log.d(TAG, "y: " + String.format("%.1d", sensor[Y]));
+        	Log.d(TAG, "z: " + String.format("%.1d", sensor[Z]));
         }
     }
     
