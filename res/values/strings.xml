@@ -6,5 +6,7 @@
     <string name="home_button">Start</string>
     <string name="title_activity_scan">ScanActivity</string>
     <string name="unknown_device">Unknown Device</string>
+    <string name="on_off_button">On/Off</string>
+    <string name="color_button">Color</string>
 
 </resources>

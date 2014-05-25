@@ -1,5 +1,7 @@
 package com.jeremyutting.localactions;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -7,6 +9,15 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
@@ -49,7 +60,7 @@ public class ScanActivity extends Activity {
 		// Link this activity to the activity_scan.xml layout
 		setContentView(R.layout.activity_scan);
 		
-		L.enableDebugLogging(true);
+		L.enableDebugLogging(false);
 		
 		// Create our custom ListView adapter, and link it with our view
 		adapter = new LeDeviceListAdapter();
@@ -270,7 +281,6 @@ public class ScanActivity extends Activity {
  
         @Override
         public View getView(int i, View view, ViewGroup viewGroup) {
-        	Log.d(TAG, "getView()");
             ViewHolder viewHolder;
             // General ListView optimization code.
             if (view == null) {
@@ -331,13 +341,89 @@ public class ScanActivity extends Activity {
         	y = (y+y2) / 2;
         	
         	// Log the calculate x/y coordinates to the debug terminal
-        	Log.d(TAG, "x: " + String.format("%.1f", x));
-        	Log.d(TAG, "y: " + String.format("%.1f", y));
+        	//Log.d(TAG, "x: " + String.format("%.1f", x));
+        	//Log.d(TAG, "y: " + String.format("%.1f", y));
         }
     }
     
     static class ViewHolder {
         TextView deviceName;
         TextView deviceDistance;
+    }
+    
+    public static LightState parseState(JSONObject jsonObj) {
+
+		LightState state = new LightState();
+
+		try{
+			JSONArray state_list = jsonObj.getJSONArray("state");
+			JSONObject stat = state_list.getJSONObject(0);
+			state.hue = stat.optInt("hue");
+			state.on = stat.optBoolean("on");
+			state.brightness = stat.optInt("bri");
+			state.saturation = stat.optInt("sat");
+
+		} catch(JSONException e) {
+			Log.d(TAG, "JSON exception when parsing light state");
+		}
+		return state;
+	}
+    
+    public static void parseSetStateResponse(URI url, int bri,int hue,int sat, boolean on) {
+    	try {
+    		// 1. create HttpClient
+			HttpClient httpclient = new DefaultHttpClient();
+
+			// 2. make POST request to the given URL
+			HttpPost httpPost = new HttpPost(url);
+
+			String json = "";
+
+
+			JSONObject jsonObject = new JSONObject();
+
+			jsonObject.accumulate("hue", hue);
+			jsonObject.accumulate("on", on);
+			jsonObject.accumulate("bri", bri);
+			jsonObject.accumulate("sat", sat);
+
+
+			json = jsonObject.toString();
+			Log.d(TAG, "json: " + json);
+
+			// 5. set json to StringEntity
+			StringEntity se = new StringEntity(json);
+
+			// 6. set httpPost Entity
+			httpPost.setEntity(se);
+
+			// 7. Set some headers to inform server about the type of the content   
+			httpPost.setHeader("Accept", "application/json");
+			httpPost.setHeader("Content-type", "application/json");
+
+			// 8. Execute POST request to the given URL
+			HttpResponse httpResponse = httpclient.execute(httpPost);
+			
+		} catch (Exception e) {
+			Log.d(TAG, "Stack trace: " + e);
+    	}
+	}
+    
+    public void lightOnOff(View view) {
+    	URI uri = null;
+		try {
+			uri = new URI("http://192.168.99.161/");
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	parseSetStateResponse(uri, 1, 2, 3, true);
+    }
+    
+    static class LightState {
+    	public int hue;
+    	public boolean on;
+    	public int brightness;
+    	public int saturation;
     }
 }

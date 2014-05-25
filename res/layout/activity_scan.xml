@@ -1,15 +1,37 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
     <!-- This is the list view for the scan activity. listitem_device.xml will populate this. -->
+
     <ListView
         android:id="@+id/device_list"
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="250dp"
+        android:orientation="vertical" />
     
     <!--  We could perhaps set the height of the ListView to be fixed,
     	  since we know there's only 3 beacons, and put the button here. -->
 
-</FrameLayout>
+    <Button
+        android:id="@+id/on_off_button"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/device_list"
+        android:layout_marginLeft="41dp"
+        android:layout_marginTop="54dp"
+        android:text="@string/on_off_button"
+        android:onClick="lightOnOff" />
+
+    <Button
+        android:id="@+id/color_button"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/on_off_button"
+        android:layout_alignBottom="@+id/on_off_button"
+        android:layout_marginLeft="38dp"
+        android:layout_toRightOf="@+id/on_off_button"
+        android:text="@string/color_button" />
+
+</RelativeLayout>
