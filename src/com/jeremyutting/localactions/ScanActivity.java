@@ -80,7 +80,7 @@ public class ScanActivity extends Activity {
 					// Update the title bar when a beacon is found.
 					@Override
 					public void run() {
-						getActionBar().setSubtitle("Found " + beacons.size() + " beacons");
+						//getActionBar().setSubtitle("Found " + beacons.size() + " beacons");
 						adapter.replaceWith(beacons);
 					}
 				});
@@ -316,45 +316,92 @@ public class ScanActivity extends Activity {
         }
         
         /*
-         * Prints the location (x, y, z) of the sensor using d1 as the origin
+         * Prints the location (x, y) of the sensor using d1 as the origin
+         * Now with more actually working! 
+         * Still need to take the distance as a ratio of the maximum, for best results.
          */
         public void GetCoordinates(Double d1, Double d2, Double d3) {
         	// Constants to make array indices more explicit
         	final int X = 0;
         	final int Y = 1;
-        	final int Z = 2;
         	// Declare our origin
-        	// TODO: Provide this with a parameter
-        	double[] origin = {0.0d, 0.0d, 0.0d};
+        	double[] origin = {0.0d, 0.0d};
         	// Declare our sources (the estimotes)
-        	// TODO: Provide this with a parameter instead of being arbitrary
         	double[] first = origin;
-        	double[] second = {10.0d, 0.0d, 0.0d};
-        	double[] third = {10.0d, 5.0d, 0.0d};
+        	double[] second = {0.0d, 20.0d};
+        	double[] third = {20.0d, 0.0d};
         	// Declare our coordinates
-        	double[] sensor = {5.0d, -10.0d, 0.0d};
+        	double[] sensor = {0.0d, 0.0d};
         	
-        	// Now we can calculate our sensor coordinates
-        	sensor[X] = (d1*d1 - d2*d2 + d3*d3)/(2*second[X]);
-        	sensor[Y] = (d1*d1 - d3*d3 + third[X]*third[X] + third[Y]*third[Y])/(2*third[Y]) - (third[X]/third[Y])*sensor[X];
-        	sensor[Z] = Math.sqrt(d1*d1 - sensor[X]*sensor[X] - sensor[Y]*sensor[Y]);
+        	double normalized1 = 0;
+        	for (int j=0; j<2; j++) {
+        		normalized1 += Math.pow(second[j] - first[j], 2.0);
+        	}
         	
-<<<<<<< HEAD
-        	x = (W*(b3y-b2y) - Z*(b2y-b1y)) / (2*((b2x-b1x)*(b3y-b2y) - (b3x-b2x)*(b2y-b1y)));
-        	y = (W - 2*x*(b2x-b1x)) / (2*(b2y-b1y));
-        	y2 = (Z - 2*x*(b3x-b2x)) / (2*(b3y-b2y));
+        	double[] ex = matrixDiv(matrixSub(second, first), Math.sqrt(normalized1));
+        	double i = matrixDot(ex, matrixSub(third, first));
         	
-        	y = (y+y2) / 2;
+        	double[] exMultI = matrixMult(ex, i);
+        	double normalized2 = 0;
+        	for (int j=0; j<2; j++) {
+        		normalized2 += Math.pow(third[j] - first[j] - exMultI[j], 2.0);
+        	}
         	
-        	// Log the calculate x/y coordinates to the debug terminal
-        	//Log.d(TAG, "x: " + String.format("%.1f", x));
-        	//Log.d(TAG, "y: " + String.format("%.1f", y));
-=======
-        	// Log the calculate (x, y, z) coordinates to the debug terminal
-        	Log.d(TAG, "x: " + String.format("%.1d", sensor[X]));
-        	Log.d(TAG, "y: " + String.format("%.1d", sensor[Y]));
-        	Log.d(TAG, "z: " + String.format("%.1d", sensor[Z]));
->>>>>>> 2280b7228c4c1a1529151ff5a20664272d26e72a
+        	double[] ey = matrixDiv(matrixSub(matrixSub(third, first), matrixMult(ex, i)), Math.sqrt(normalized2));
+        	
+        	double d = Math.sqrt(normalized1);
+        	
+        	double j = matrixDot(ey, matrixSub(third, first));
+        	
+        	sensor[X] = (d1*d1 - d2*d2 + d*d) / (2*d);
+        	sensor[Y] = ((d1*d1 - d3*d3 + i*i + j*j) / (2*j)) - ((i/j*sensor[X]));
+        	
+        	getActionBar().setSubtitle("x: " + String.format("%.1f", sensor[X]) + ", y: " + String.format("%.1f", sensor[Y]));
+        	Log.d(TAG, "x: " + String.format("%.1f", sensor[X]) + ", y: " + String.format("%.1f", sensor[Y]));
+        }
+        
+        /*
+         * Helper function to do basic matrix subtractions
+         */
+        public double[] matrixSub(double[] a, double[] b) {
+        	double[] result = {0.0d, 0.0d};
+        	for (int i=0; i<2; i++) {
+        		result[i] = a[i] - b[i];
+        	}
+        	return result;
+        }
+        
+        /*
+         *  Helper function to do basic matrix divisions by a scalar
+         */
+        public double[] matrixDiv(double[] a, double scalar) {
+        	double[] result = {0.0d, 0.0d};
+        	for (int i=0; i<2; i++) {
+        		result[i] = a[i]/scalar;
+        	}
+        	return result;
+        }
+        
+        /*
+         * Helper function to do basic matrix multiplications by a scalar
+         */
+        public double[] matrixMult(double[] a, double scalar) {
+        	double[] result = {0.0d, 0.0d};
+        	for (int i=0; i<2; i++) {
+        		result[i] = a[i]*scalar;
+        	}
+        	return result;
+        }
+        
+        /*
+         * Helper function to do basic matrix dot products
+         */
+        public double matrixDot(double[] a, double[] b) {
+        	double result = 0.0d;
+        	for (int i=0; i<2; i++) {
+        		result += a[i] * b[i];
+        	}
+        	return result;
         }
     }
     
