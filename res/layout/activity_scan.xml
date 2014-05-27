@@ -32,6 +32,7 @@
         android:layout_alignBottom="@+id/on_off_button"
         android:layout_marginLeft="38dp"
         android:layout_toRightOf="@+id/on_off_button"
-        android:text="@string/color_button" />
+        android:text="@string/color_button"
+        android:onClick="changeLightColor" />
 
 </RelativeLayout>
