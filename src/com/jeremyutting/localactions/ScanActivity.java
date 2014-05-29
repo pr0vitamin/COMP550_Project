@@ -31,7 +31,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.RemoteException;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -106,7 +105,7 @@ public class ScanActivity extends Activity {
 		ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 		if (networkInfo != null && networkInfo.isConnected()) {
-			/*Timer timer = new Timer();
+			Timer timer = new Timer();
 			timer.scheduleAtFixedRate(new TimerTask() {
 
 				@Override
@@ -114,7 +113,7 @@ public class ScanActivity extends Activity {
 					new FetchAPITask().execute();
 				}
 				
-			}, 0, 2000);*/
+			}, 0, 2000);
 		} else {
 			// No network connection - do something.
 		}
@@ -489,13 +488,15 @@ public class ScanActivity extends Activity {
 			String urlString = "http://" + bridgeIP + "/api/" + hueAPIKey + "/lights/" + bulbNumber + "/state";
 			try {
 				URL url = new URL(urlString);
-				HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-				httpCon.setDoOutput(true);
-				httpCon.setRequestMethod("PUT");
-				OutputStreamWriter out = new OutputStreamWriter(httpCon.getOutputStream());
+				HttpURLConnection con = (HttpURLConnection) url.openConnection();
+				con.setDoOutput(true);
+				con.setRequestMethod("PUT");
+				OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
 				out.write(requestData);
 				out.close();
-				httpCon.getInputStream();
+				int response = con.getResponseCode();
+				Log.d(TAG, "SET COLOR RESPONSE: " + response);
+				con.getInputStream();
 			} catch (MalformedURLException e) {
 				Log.e(TAG, "Malformed URL: " + e);
 			} catch (IOException e) {
@@ -526,13 +527,15 @@ public class ScanActivity extends Activity {
 			String urlString = "http://" + bridgeIP + "/api/" + hueAPIKey + "/lights/" + bulbNumber + "/state";
 			try {
 				URL url = new URL(urlString);
-				HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-				httpCon.setDoOutput(true);
-				httpCon.setRequestMethod("PUT");
-				OutputStreamWriter out = new OutputStreamWriter(httpCon.getOutputStream());
+				HttpURLConnection con = (HttpURLConnection) url.openConnection();
+				con.setDoOutput(true);
+				con.setRequestMethod("PUT");
+				OutputStreamWriter out = new OutputStreamWriter(con.getOutputStream());
 				out.write(requestData);
 				out.close();
-				httpCon.getInputStream();
+				int response = con.getResponseCode();
+				Log.d(TAG, "SET COLOR RESPONSE: " + response);
+				con.getInputStream();
 			} catch (MalformedURLException e) {
 				Log.e(TAG, "Malformed URL: " + e);
 			} catch (IOException e) {
@@ -596,15 +599,14 @@ public class ScanActivity extends Activity {
 		InputStream is = null;
 		try {
 			URL url = new URL(myUrl);
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			conn.setReadTimeout(2000);
-			conn.setConnectTimeout(10);
-			conn.setRequestMethod("GET");
-			conn.setDoInput(true);
-			conn.connect();
-			int response = conn.getResponseCode();
-			//Log.d(TAG, "The response is: " + response);
-			is = conn.getInputStream();
+			HttpURLConnection con = (HttpURLConnection) url.openConnection();
+			con.setReadTimeout(2000);
+			con.setConnectTimeout(2000);
+			con.setRequestMethod("GET");
+			con.setDoInput(true);
+			int response = con.getResponseCode();
+			Log.d(TAG, "FETCH STATE RESPONSE: " + response);
+			is = con.getInputStream();
 			
 			String content = readIt(is);
 			return content;
