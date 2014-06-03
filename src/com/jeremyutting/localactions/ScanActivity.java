@@ -51,7 +51,7 @@ import android.support.v4.app.NavUtils;
 
 public class ScanActivity extends Activity {
 	
-	private String bridgeIP = "192.168.99.161";
+	private String bridgeIP = "192.168.1.2";
 	private String hueAPIKey = "comp550app";
 	private Button stateButton;
 	private int nearestBeacon = 0;
@@ -84,7 +84,7 @@ public class ScanActivity extends Activity {
 		
 		// Create and initialize Estimote BeaconManager, and set the scan period to 200ms 
 		beacon_manager = new BeaconManager(this);
-		beacon_manager.setForegroundScanPeriod(500, 0);
+		beacon_manager.setForegroundScanPeriod(200, 0);
 		// Ranging is the act of scanning for beacons
 		beacon_manager.setRangingListener(new BeaconManager.RangingListener() {
 			
@@ -237,7 +237,7 @@ public class ScanActivity extends Activity {
 		// adds the latest distance to the queue, remove the oldest if there's more than 5
 		public void addDistance(Double distance) {
 			distances.add(distance);
-			if (distances.size() > 2) {
+			if (distances.size() > 5) {
 				distances.remove();
 			}
 		}

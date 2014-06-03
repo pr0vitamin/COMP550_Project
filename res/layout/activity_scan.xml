@@ -7,32 +7,39 @@
     <ListView
         android:id="@+id/device_list"
         android:layout_width="match_parent"
-        android:layout_height="250dp"
+        android:layout_height="220dp"
         android:orientation="vertical" />
     
-    <!--  We could perhaps set the height of the ListView to be fixed,
-    	  since we know there's only 3 beacons, and put the button here. -->
-
-    <Button
-        android:id="@+id/on_off_button"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_below="@+id/device_list"
-        android:layout_marginLeft="41dp"
-        android:layout_marginTop="54dp"
-        android:text="@string/on_off_button"
-        android:onClick="lightOnOff" />
-
-    <Button
-        android:id="@+id/color_button"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/on_off_button"
-        android:layout_alignBottom="@+id/on_off_button"
-        android:layout_marginLeft="38dp"
-        android:layout_toRightOf="@+id/on_off_button"
-        android:text="@string/color_button"
-        android:onClick="changeLightColor" />
+    <LinearLayout
+		android:orientation="horizontal"
+        android:background="@android:drawable/bottom_bar"
+        android:paddingLeft="4.0dip"
+        android:paddingTop="5.0dip"
+        android:paddingRight="4.0dip"
+        android:paddingBottom="1.0dip"
+        android:layout_width="fill_parent" android:layout_height="wrap_content"
+        android:layout_below="@+id/device_list" >
+        
+	    <Button
+	        android:id="@+id/on_off_button"
+	        android:layout_width="0dp"
+	        android:layout_weight="1.0"
+	        android:layout_height="fill_parent"
+	        android:textSize="20sp"
+	        android:textStyle="bold"
+	        android:text="@string/on_off_button"
+	        android:onClick="lightOnOff" />
+	
+	    <Button
+	        android:id="@+id/color_button"
+	        android:layout_width="0dp"
+	        android:layout_weight="1.0"
+	        android:layout_height="fill_parent"
+	        android:textSize="20sp"
+	        android:textStyle="bold"
+	        android:text="@string/color_button"
+	        android:onClick="changeLightColor" />
+	    
+	</LinearLayout>
 
 </RelativeLayout>
